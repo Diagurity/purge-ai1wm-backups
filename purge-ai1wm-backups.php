@@ -313,7 +313,13 @@ function wpress_purge_sanitize_ttl( $value ) {
 		$seconds = (int) round( (float) $amount * $units[ $unit ] );
 	}
 
-	if ( $seconds < WPRESS_PURGE_TTL_MIN || $seconds > WPRESS_PURGE_TTL_MAX ) {
+	/*
+	 * 初回の保存ではこの関数が2回呼ばれるので、同じ知らせを2つ出さないよう、
+	 * すでに積んであれば足さない。
+	 */
+	$already = wp_list_filter( get_settings_errors( WPRESS_PURGE_TTL_OPTION ), array( 'code' => 'wpress_purge_ttl_range' ) );
+
+	if ( ( $seconds < WPRESS_PURGE_TTL_MIN || $seconds > WPRESS_PURGE_TTL_MAX ) && ! $already ) {
 		add_settings_error(
 			WPRESS_PURGE_TTL_OPTION,
 			'wpress_purge_ttl_range',
@@ -324,10 +330,9 @@ function wpress_purge_sanitize_ttl( $value ) {
 				wpress_purge_format_duration( WPRESS_PURGE_TTL_MAX )
 			)
 		);
-		$seconds = min( WPRESS_PURGE_TTL_MAX, max( WPRESS_PURGE_TTL_MIN, $seconds ) );
 	}
 
-	return $seconds;
+	return min( WPRESS_PURGE_TTL_MAX, max( WPRESS_PURGE_TTL_MIN, $seconds ) );
 }
 
 add_action( 'admin_menu', function () {
@@ -387,7 +392,7 @@ function wpress_purge_render_page() {
 			</div>
 		<?php endif; ?>
 
-		<?php settings_errors( WPRESS_PURGE_TTL_OPTION ); ?>
+		<?php /* 保存結果の知らせは「設定」メニューの画面なら WordPress が出す（ここで出すと2つ並ぶ） */ ?>
 
 		<form method="post" action="options.php">
 			<?php settings_fields( 'wpress_purge' ); ?>

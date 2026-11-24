@@ -606,9 +606,14 @@ function wpress_purge_admin_css() {
 }
 .wpp .button.wpp-delete {
 	display: inline-flex;
+	flex: none;
 	align-items: center;
-	gap: 4px;
+	gap: 3px;
+	min-height: 26px;
+	padding: 0 8px;
 	border-color: var(--wpp-danger);
+	font-size: 12px;
+	line-height: 1;
 	color: var(--wpp-danger);
 }
 .wpp .button.wpp-delete:hover,
@@ -617,10 +622,14 @@ function wpress_purge_admin_css() {
 	background: var(--wpp-danger-soft);
 	color: var(--wpp-danger);
 }
-.wpp .button.wpp-delete .dashicons {
-	font-size: 16px;
-	width: 16px;
-	height: 16px;
+.wpp .button.wpp-delete .dashicons,
+.wpp .button.wpp-delete .dashicons::before {
+	display: block;
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	font-size: 14px;
+	line-height: 14px;
 }
 .wpp-empty {
 	display: flex;

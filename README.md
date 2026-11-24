@@ -49,3 +49,11 @@ define( 'WPRESS_PURGE_TTL', 7200 ); // 2 時間（秒）
 - 削除対象は `ai1wm-backups` 内の `*.wpress` のみ。
 - 書き込み中のファイルは mtime が進むので、エクスポート途中では消えない。
 - 削除に失敗（パーミッション等）した場合は管理画面に通知し、`error_log` にも記録する。問題が直れば通知は自動で消える。
+
+## 配布用の zip
+
+`sh bin/zip.sh` で `dist/purge-ai1wm-backups-<版>.zip` ができる。中身はコミット済みのファイルだけ（`.git`・`.gitignore`・`bin/` は入らない）。管理画面の「プラグインを追加 → プラグインのアップロード」にそのまま渡せる。
+
+## ライセンス
+
+GPLv2 以降（`LICENSE`）。著作権者は Diagurity。

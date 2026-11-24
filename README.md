@@ -18,6 +18,15 @@ All-in-One WP Migration（AI1WM）の拡張。AI1WM が作る `.wpress` を、�
 - **管理画面で管理したい**
   `wp-content/plugins/purge-ai1wm-backups/` ごと置いて有効化する。
 
+## 言語
+
+管理画面の文言は英語で書いてあり、日本語は `languages/purge-ai1wm-backups-ja.po`（`.mo` は `msgfmt` で作る）。
+サイトの言語（ユーザーの言語）が日本語なら日本語で、それ以外は英語で出る。
+
+- `plugins/` に置いたときは、フォルダごと置けば `languages/` も一緒に入る
+- `mu-plugins/` に1ファイルで置いたときは、日本語にしたければ `wp-content/mu-plugins/purge-ai1wm-backups/languages/` に `.mo` を置く。置かなければ英語で出る
+- 文言を変えたら `.po` を直して `msgfmt -o languages/purge-ai1wm-backups-ja.mo languages/purge-ai1wm-backups-ja.po`
+
 ## 設定
 
 管理画面の **設定 → AIOWM バックアップ自動削除** で、削除までの時間を分・時間・日で指定する（10分〜30日、既定1時間）。

@@ -1,11 +1,12 @@
 <?php
 /**
- * Plugin Name: All-in-One WP Migration 拡張：バックアップ自動削除
- * Description: All-in-One WP Migration の拡張です。エクスポートで作られたバックアップ（.wpress）を、指定した時間がたったら自動で削除します。削除までの時間は「設定 → AIOWM バックアップ自動削除」で変えられます。
- * Version:     1.2.0
+ * Plugin Name: All-in-One WP Migration Add-on: Auto-delete Backups
+ * Description: An add-on for All-in-One WP Migration. Deletes the backups (.wpress) made by an export once the time you set has passed. Change the time under Settings → AIOWM Backup Auto-delete.
+ * Version:     1.3.0
  * Author:      Diagurity
  * License:     GPL-2.0-or-later
  * Text Domain: purge-ai1wm-backups
+ * Domain Path: /languages
  *
  * 置き場所（どちらでも動く）:
  *   - 絶対に止めたくない場合（推奨・セキュリティ用途）:
@@ -44,7 +45,22 @@ defined( 'ABSPATH' ) || exit;
 if ( defined( 'WPRESS_PURGE_LOADED' ) ) {
 	return;
 }
-define( 'WPRESS_PURGE_LOADED', '1.2.0' );
+define( 'WPRESS_PURGE_LOADED', '1.3.0' );
+
+/*
+ * 画面の文言は英語で書き、日本語は languages/ の翻訳ファイルに置く。
+ * mu-plugins に1ファイルで置いたときは、隣の purge-ai1wm-backups/languages/ も探す。
+ * translate.wordpress.org などの翻訳（WP_LANG_DIR）があれば WordPress がそちらを先に読む。
+ */
+add_action( 'init', function () {
+	$mo = 'purge-ai1wm-backups-' . determine_locale() . '.mo';
+	foreach ( array( __DIR__ . '/languages/', __DIR__ . '/purge-ai1wm-backups/languages/' ) as $dir ) {
+		if ( is_readable( $dir . $mo ) ) {
+			load_textdomain( 'purge-ai1wm-backups', $dir . $mo );
+			return;
+		}
+	}
+}, 0 );
 
 /* 削除に失敗したファイルを覚えておくオプション名（管理画面通知に使う） */
 define( 'WPRESS_PURGE_FAIL_OPTION', 'wpress_purge_failures' );
@@ -111,15 +127,18 @@ function wpress_purge_format_duration( $seconds ) {
 
 	$parts = array();
 	if ( $days ) {
-		$parts[] = $days . '日';
+		/* translators: %d: number of days */
+		$parts[] = sprintf( _n( '%d day', '%d days', $days, 'purge-ai1wm-backups' ), $days );
 	}
 	if ( $hours ) {
-		$parts[] = $hours . '時間';
+		/* translators: %d: number of hours */
+		$parts[] = sprintf( _n( '%d hour', '%d hours', $hours, 'purge-ai1wm-backups' ), $hours );
 	}
 	if ( $minutes || ! $parts ) {
-		$parts[] = $minutes . '分';
+		/* translators: %d: number of minutes */
+		$parts[] = sprintf( _n( '%d minute', '%d minutes', $minutes, 'purge-ai1wm-backups' ), $minutes );
 	}
-	return implode( 'と', $parts );
+	return implode( _x( ', ', 'between parts of a duration', 'purge-ai1wm-backups' ), $parts );
 }
 
 /**
@@ -177,7 +196,7 @@ function wpress_purge_now() {
 			false
 		);
 		error_log( sprintf(
-			'[wpress-purge] .wpress の削除に失敗しました（%d 件）: %s',
+			'[wpress-purge] Could not delete .wpress files (%d): %s',
 			count( $failed ),
 			implode( ', ', $failed )
 		) );
@@ -187,7 +206,7 @@ function wpress_purge_now() {
 
 	if ( $deleted ) {
 		error_log( sprintf(
-			'[wpress-purge] .wpress を削除しました（%d 件）: %s',
+			'[wpress-purge] Deleted .wpress files (%d): %s',
 			count( $deleted ),
 			implode( ', ', $deleted )
 		) );
@@ -204,7 +223,7 @@ add_filter( 'cron_schedules', function ( $schedules ) {
 	if ( ! isset( $schedules['wpress_purge_ten_minutes'] ) ) {
 		$schedules['wpress_purge_ten_minutes'] = array(
 			'interval' => 600,
-			'display'  => '10分ごと（.wpress 自動削除）',
+			'display'  => 'Every 10 minutes (.wpress auto-delete)',
 		);
 	}
 	return $schedules;
@@ -299,7 +318,8 @@ function wpress_purge_sanitize_ttl( $value ) {
 			WPRESS_PURGE_TTL_OPTION,
 			'wpress_purge_ttl_range',
 			sprintf(
-				'削除までの時間は %s〜%s の間で指定してください。範囲に収まる値に直して保存しました。',
+				/* translators: 1: shortest time, 2: longest time */
+				__( 'Set a time between %1$s and %2$s. The value was changed to fit that range and saved.', 'purge-ai1wm-backups' ),
 				wpress_purge_format_duration( WPRESS_PURGE_TTL_MIN ),
 				wpress_purge_format_duration( WPRESS_PURGE_TTL_MAX )
 			)
@@ -312,8 +332,8 @@ function wpress_purge_sanitize_ttl( $value ) {
 
 add_action( 'admin_menu', function () {
 	add_options_page(
-		'All-in-One WP Migration 拡張：バックアップ自動削除',
-		'AIOWM バックアップ自動削除',
+		__( 'All-in-One WP Migration Add-on: Auto-delete Backups', 'purge-ai1wm-backups' ),
+		__( 'AIOWM Backup Auto-delete', 'purge-ai1wm-backups' ),
 		'manage_options',
 		WPRESS_PURGE_PAGE,
 		'wpress_purge_render_page'
@@ -325,7 +345,7 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function ( $li
 	$links[] = sprintf(
 		'<a href="%s">%s</a>',
 		esc_url( admin_url( 'options-general.php?page=' . WPRESS_PURGE_PAGE ) ),
-		'設定'
+		esc_html__( 'Settings', 'purge-ai1wm-backups' )
 	);
 	return $links;
 } );
@@ -352,21 +372,18 @@ function wpress_purge_render_page() {
 	}
 	?>
 	<div class="wrap">
-		<h1>All-in-One WP Migration 拡張：バックアップ自動削除</h1>
+		<h1><?php esc_html_e( 'All-in-One WP Migration Add-on: Auto-delete Backups', 'purge-ai1wm-backups' ); ?></h1>
 
 		<div class="notice notice-info inline">
 			<p>
-				<strong>このプラグインは All-in-One WP Migration（AIOWM）の拡張です。</strong><br>
-				AIOWM のエクスポートで作られたバックアップ（.wpress）は、サイトの公開フォルダに置かれたままになり、
-				URL が分かれば誰でもダウンロードできます。中身はサイト全体（データベースと wp-config.php を含む）なので、
-				ダウンロードが済んだら残しておかないよう、指定した時間がたったら自動で削除します。
+				<strong><?php esc_html_e( 'This plugin is an add-on for All-in-One WP Migration (AIOWM).', 'purge-ai1wm-backups' ); ?></strong><br>
+				<?php esc_html_e( 'Backups (.wpress) made by an AIOWM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed.', 'purge-ai1wm-backups' ); ?>
 			</p>
 		</div>
 
 		<?php if ( ! wpress_purge_ai1wm_active() ) : ?>
 			<div class="notice notice-warning inline">
-				<p>All-in-One WP Migration が有効になっていません。このプラグインは AIOWM のバックアップを消すためのものです。
-				残っている .wpress がある場合は、AIOWM が無くても削除は動きます。</p>
+				<p><?php esc_html_e( 'All-in-One WP Migration is not active. This plugin is meant to delete AIOWM backups. Any .wpress files left on the server are still deleted without AIOWM.', 'purge-ai1wm-backups' ); ?></p>
 			</div>
 		<?php endif; ?>
 
@@ -376,23 +393,39 @@ function wpress_purge_render_page() {
 			<?php settings_fields( 'wpress_purge' ); ?>
 			<table class="form-table" role="presentation">
 				<tr>
-					<th scope="row"><label for="wpress_purge_ttl">削除までの時間</label></th>
+					<th scope="row"><label for="wpress_purge_ttl"><?php esc_html_e( 'Time until deletion', 'purge-ai1wm-backups' ); ?></label></th>
 					<td>
 						<input type="number" id="wpress_purge_ttl" name="<?php echo esc_attr( WPRESS_PURGE_TTL_OPTION ); ?>"
 							value="<?php echo esc_attr( $amount ); ?>" min="1" step="1" class="small-text" <?php disabled( $locked ); ?>>
-						<select name="wpress_purge_ttl_unit" aria-label="単位" <?php disabled( $locked ); ?>>
-							<option value="minute" <?php selected( $unit, 'minute' ); ?>>分</option>
-							<option value="hour" <?php selected( $unit, 'hour' ); ?>>時間</option>
-							<option value="day" <?php selected( $unit, 'day' ); ?>>日</option>
+						<select name="wpress_purge_ttl_unit" aria-label="<?php esc_attr_e( 'Unit', 'purge-ai1wm-backups' ); ?>" <?php disabled( $locked ); ?>>
+							<option value="minute" <?php selected( $unit, 'minute' ); ?>><?php esc_html_e( 'minutes', 'purge-ai1wm-backups' ); ?></option>
+							<option value="hour" <?php selected( $unit, 'hour' ); ?>><?php esc_html_e( 'hours', 'purge-ai1wm-backups' ); ?></option>
+							<option value="day" <?php selected( $unit, 'day' ); ?>><?php esc_html_e( 'days', 'purge-ai1wm-backups' ); ?></option>
 						</select>
 						<p class="description">
-							バックアップが最後に書き込まれてから、この時間がたつと削除します。
-							<?php echo esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MIN ) ); ?>〜<?php echo esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MAX ) ); ?>の間で指定できます（既定は1時間）。<br>
-							確認は10分ごとなので、実際に消えるのは最大で10分ほど遅れます。エクスポートの途中で消えることはありません。
+							<?php
+							printf(
+								/* translators: 1: shortest time, 2: longest time, 3: default time */
+								esc_html__( 'A backup is deleted once this much time has passed since it was last written. You can set %1$s to %2$s (default: %3$s).', 'purge-ai1wm-backups' ),
+								esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MIN ) ),
+								esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MAX ) ),
+								esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_DEFAULT ) )
+							);
+							?>
+							<br>
+							<?php esc_html_e( 'Checks run every 10 minutes, so a file may be deleted up to about 10 minutes late. Files are never deleted in the middle of an export.', 'purge-ai1wm-backups' ); ?>
 						</p>
 						<?php if ( $locked ) : ?>
-							<p class="description"><strong>wp-config.php の <code>WPRESS_PURGE_TTL</code> で
-							<?php echo esc_html( wpress_purge_format_duration( $ttl ) ); ?> に固定されているため、ここでは変えられません。</strong></p>
+							<p class="description"><strong>
+							<?php
+							printf(
+								/* translators: 1: time, 2: constant name */
+								esc_html__( 'Fixed to %1$s by %2$s in wp-config.php, so it cannot be changed here.', 'purge-ai1wm-backups' ),
+								esc_html( wpress_purge_format_duration( $ttl ) ),
+								'<code>WPRESS_PURGE_TTL</code>'
+							);
+							?>
+							</strong></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -404,7 +437,7 @@ function wpress_purge_render_page() {
 			?>
 		</form>
 
-		<h2>いま残っているバックアップ</h2>
+		<h2><?php esc_html_e( 'Backups on the server now', 'purge-ai1wm-backups' ); ?></h2>
 		<?php wpress_purge_render_files( $ttl ); ?>
 	</div>
 	<?php
@@ -421,13 +454,16 @@ function wpress_purge_render_files( $ttl ) {
 	$files = is_array( $files ) ? array_filter( $files, 'is_file' ) : array();
 
 	if ( ! $files ) {
-		echo '<p>ありません。</p>';
+		echo '<p>' . esc_html__( 'None.', 'purge-ai1wm-backups' ) . '</p>';
 		return;
 	}
 
 	$now = time();
 	echo '<table class="widefat striped" style="max-width:800px"><thead><tr>'
-		. '<th>ファイル</th><th>大きさ</th><th>最後の書き込み</th><th>削除の目安</th>'
+		. '<th>' . esc_html__( 'File', 'purge-ai1wm-backups' ) . '</th>'
+		. '<th>' . esc_html__( 'Size', 'purge-ai1wm-backups' ) . '</th>'
+		. '<th>' . esc_html__( 'Last written', 'purge-ai1wm-backups' ) . '</th>'
+		. '<th>' . esc_html__( 'Deleted', 'purge-ai1wm-backups' ) . '</th>'
 		. '</tr></thead><tbody>';
 
 	foreach ( $files as $file ) {
@@ -438,15 +474,21 @@ function wpress_purge_render_files( $ttl ) {
 			esc_html( basename( $file ) ),
 			esc_html( size_format( (int) filesize( $file ) ) ),
 			esc_html( wp_date( 'Y-m-d H:i', $mtime ) ),
-			esc_html( $remain > 0 ? 'あと約' . wpress_purge_format_duration( $remain ) : '次の確認で削除' )
+			esc_html(
+				$remain > 0
+					/* translators: %s: remaining time */
+					? sprintf( __( 'in about %s', 'purge-ai1wm-backups' ), wpress_purge_format_duration( $remain ) )
+					: __( 'at the next check', 'purge-ai1wm-backups' )
+			)
 		);
 	}
 	echo '</tbody></table>';
 
 	if ( wpress_purge_ai1wm_active() ) {
 		printf(
-			'<p><a href="%s">AIOWM のバックアップ画面を開く</a></p>',
-			esc_url( admin_url( 'admin.php?page=ai1wm_backups' ) )
+			'<p><a href="%s">%s</a></p>',
+			esc_url( admin_url( 'admin.php?page=ai1wm_backups' ) ),
+			esc_html__( 'Open the AIOWM backups screen', 'purge-ai1wm-backups' )
 		);
 	}
 }
@@ -469,8 +511,9 @@ add_action( 'admin_notices', function () {
 	$list = implode( ', ', array_map( 'esc_html', $record['files'] ) );
 
 	echo '<div class="notice notice-error"><p>'
-		. '<strong>All-in-One WP Migration のバックアップ（.wpress）の自動削除に失敗しました。</strong><br>'
-		. 'ai1wm-backups ディレクトリの書き込み権限をご確認ください（FTP 等で手動削除も可）。<br>'
-		. '対象: ' . $list
+		. '<strong>' . esc_html__( 'Could not auto-delete All-in-One WP Migration backups (.wpress).', 'purge-ai1wm-backups' ) . '</strong><br>'
+		. esc_html__( 'Check that the ai1wm-backups folder is writable. You can also delete the files by FTP.', 'purge-ai1wm-backups' ) . '<br>'
+		/* translators: %s: list of file names */
+		. sprintf( esc_html__( 'Files: %s', 'purge-ai1wm-backups' ), $list )
 		. '</p></div>';
 } );

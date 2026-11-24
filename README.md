@@ -56,4 +56,6 @@ define( 'WPRESS_PURGE_TTL', 7200 ); // 2 時間（秒）
 
 ## ライセンス
 
-GPLv2 以降（`LICENSE`）。著作権者は Diagurity。
+Copyright (C) 2026 Diagurity (https://diagurity.com/)
+
+GNU General Public License version 2、またはそれ以降の版（GPL-2.0-or-later）で配布する。全文は `LICENSE`。

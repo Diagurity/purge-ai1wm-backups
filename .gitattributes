@@ -1,0 +1,4 @@
+# 配布用の zip（git archive）に入れないもの
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/bin export-ignore

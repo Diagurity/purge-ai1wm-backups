@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: purge-ai1wm-backups 1.4.0\n"
+"Project-Id-Version: purge-ai1wm-backups 1.5.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-11-24 14:18+0900\n"
 "Language: ja\n"
@@ -256,3 +256,24 @@ msgstr ""
 #, php-format
 msgid "Files: %s"
 msgstr "対象: %s"
+
+msgid ""
+"Backups that were already on the server when this plugin was activated are "
+"counted from the time it was activated."
+msgstr ""
+"有効化した時点ですでにあったバックアップは、有効化した時刻から数えます。"
+
+#. translators: 1: number of backups, 2: remaining time
+#, php-format
+msgid ""
+"%1$d backup (.wpress) that was already on the server will be deleted "
+"automatically in about %2$s. Download it before then if you need it."
+msgid_plural ""
+"%1$d backups (.wpress) that were already on the server will be deleted "
+"automatically in about %2$s. Download them before then if you need them."
+msgstr[0] ""
+"有効化する前からあったバックアップ（.wpress）%1$d 件は、あと約%2$sで自動削除"
+"されます。必要なものはそれまでにダウンロードしてください。"
+
+msgid "See the backups"
+msgstr "バックアップを見る"

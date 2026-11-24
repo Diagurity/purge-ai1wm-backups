@@ -41,14 +41,21 @@ define( 'WPRESS_PURGE_TTL', 7200 ); // 2 時間（秒）
 ```
 
 削除先は `AI1WM_BACKUPS_PATH`（未定義なら `wp-content/ai1wm-backups`）。
-プラグインを削除すると、設定（`wpress_purge_ttl`）と記録も消える。
+プラグインを削除すると、設定（`wpress_purge_ttl`）と記録（`wpress_purge_since` など）も消える。
 
 ## 動作
 
 - WP-Cron（10 分ごと）と管理画面読み込み（5 分に 1 回まで）の両方で走る。cron が止まっても管理画面側で動く。
 - 削除対象は `ai1wm-backups` 内の `*.wpress` のみ。
+- **有効化する前からあったファイルは、有効化した時刻から数える**（有効化した瞬間に古いバックアップがまとめて消えないように）。通常プラグインは有効化するたびに、mu-plugins は初めて動いたときに、その時刻を `wpress_purge_since` に記録する。該当するファイルがある間は、管理画面に「あと約○分で自動削除」と予告が出る。
 - 書き込み中のファイルは mtime が進むので、エクスポート途中では消えない。
 - 削除に失敗（パーミッション等）した場合は管理画面に通知し、`error_log` にも記録する。問題が直れば通知は自動で消える。
+
+## 更新の知らせ（1.5.0 から）
+
+plugins/ に置いたときは、diagurity.com/wp-plugins/ の更新 JSON を1日1回見て、新しい版があれば WordPress の更新画面に出す（「詳細を表示」は日本語／英語）。
+読むのは `https://seccheck-fetcher.odd-brook-2273.workers.dev/wp-plugins/updates/purge-ai1wm-backups.json` への GET 1本だけで、User-Agent は `purge-ai1wm-backups/<版>`（サイトの URL などは付けない）。
+mu-plugins に置いたときは WordPress の更新の仕組みの外なので、知らせは出ない（手で差し替える）。
 
 ## 配布用の zip
 

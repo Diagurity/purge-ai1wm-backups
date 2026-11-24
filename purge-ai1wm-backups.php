@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Purge AI1WM Backups
  * Description: Automatically deletes All-in-One WP Migration backups (.wpress) once the time you set has passed. Set the time under Settings → Purge AI1WM Backups. Not an official ServMask extension.
- * Version:     1.4.0
+ * Version:     1.5.0
  * Author:      Diagurity
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -33,6 +33,12 @@
  *   2. 管理画面の設定（オプション wpress_purge_ttl、秒）
  *   3. 既定の 1 時間
  *
+ * 時間を数え始める時刻:
+ *   ファイルの最後の書き込み時刻。ただし、このプラグインが動き始める前から
+ *   あったファイルは、動き始めた時刻から数える（有効化した瞬間に古いバックアップが
+ *   まとめて消えないように）。通常プラグインは有効化するたびに、mu-plugins は
+ *   初めて動いたときに、その時刻をオプション wpress_purge_since に記録する。
+ *
  * 実行のきっかけは2つ:
  *   1. WP-Cron（10分ごと）
  *   2. 管理画面の読み込み（5分に1回まで）
@@ -46,7 +52,7 @@ defined( 'ABSPATH' ) || exit;
 if ( defined( 'WPRESS_PURGE_LOADED' ) ) {
 	return;
 }
-define( 'WPRESS_PURGE_LOADED', '1.4.0' );
+define( 'WPRESS_PURGE_LOADED', '1.5.0' );
 
 /*
  * 画面の文言は英語で書き、日本語は languages/ の翻訳ファイルに置く。
@@ -68,6 +74,9 @@ define( 'WPRESS_PURGE_FAIL_OPTION', 'wpress_purge_failures' );
 
 /* 削除までの時間（秒）を入れておくオプション名 */
 define( 'WPRESS_PURGE_TTL_OPTION', 'wpress_purge_ttl' );
+
+/* プラグインが動き始めた時刻（UNIX 秒）を入れておくオプション名 */
+define( 'WPRESS_PURGE_SINCE_OPTION', 'wpress_purge_since' );
 
 /* 設定画面のスラッグ */
 define( 'WPRESS_PURGE_PAGE', 'purge-ai1wm-backups' );
@@ -92,6 +101,36 @@ function wpress_purge_ttl() {
 		$ttl = WPRESS_PURGE_TTL_DEFAULT;
 	}
 	return $ttl;
+}
+
+/**
+ * プラグインが動き始めた時刻（UNIX 秒）
+ *
+ * まだ記録が無ければ（mu-plugins に置いて初めて動いたとき、1.4.0 以前から
+ * 更新したときなど）、いまの時刻を記録する。
+ *
+ * @return int
+ */
+function wpress_purge_since() {
+	$since = (int) get_option( WPRESS_PURGE_SINCE_OPTION, 0 );
+	if ( $since <= 0 ) {
+		$since = time();
+		update_option( WPRESS_PURGE_SINCE_OPTION, $since );
+	}
+	return $since;
+}
+
+/**
+ * ファイルが自動削除される時刻（UNIX 秒）
+ *
+ * 最後の書き込みから削除までの時間がたったとき。ただしプラグインが動き始める前から
+ * あったファイルは、動き始めた時刻から数える。
+ *
+ * @param int $mtime ファイルの最後の書き込み時刻。
+ * @return int
+ */
+function wpress_purge_due( $mtime ) {
+	return max( (int) $mtime, wpress_purge_since() ) + wpress_purge_ttl();
 }
 
 /**
@@ -164,7 +203,6 @@ function wpress_purge_now() {
 		$files = array();
 	}
 
-	$ttl     = wpress_purge_ttl();
 	$now     = time();
 	$deleted = array();
 	$failed  = array();
@@ -175,7 +213,7 @@ function wpress_purge_now() {
 		}
 
 		$mtime = filemtime( $file );
-		if ( ! $mtime || ( $now - $mtime ) < $ttl ) {
+		if ( ! $mtime || $now < wpress_purge_due( $mtime ) ) {
 			continue;
 		}
 
@@ -242,7 +280,17 @@ function wpress_purge_schedule() {
 add_action( 'wpress_purge_event', 'wpress_purge_now' );
 
 /* 通常プラグインとして使うとき用（mu-plugins では発火しないので無害） */
-register_activation_hook( __FILE__, 'wpress_purge_schedule' );
+register_activation_hook( __FILE__, 'wpress_purge_activate' );
+
+/**
+ * 有効化したとき: cron を予約し、時間を数え始める時刻をいまにする
+ *
+ * 無効にしていた間に置かれたバックアップも、有効化した瞬間には消さない。
+ */
+function wpress_purge_activate() {
+	update_option( WPRESS_PURGE_SINCE_OPTION, time() );
+	wpress_purge_schedule();
+}
 register_deactivation_hook( __FILE__, function () {
 	wp_clear_scheduled_hook( 'wpress_purge_event' );
 } );
@@ -251,8 +299,10 @@ register_uninstall_hook( __FILE__, 'wpress_purge_uninstall' );
 /** 削除したときに設定と記録を消す */
 function wpress_purge_uninstall() {
 	delete_option( WPRESS_PURGE_TTL_OPTION );
+	delete_option( WPRESS_PURGE_SINCE_OPTION );
 	delete_option( WPRESS_PURGE_FAIL_OPTION );
 	delete_transient( 'wpress_purge_ran' );
+	delete_transient( 'purge_ai1wm_backups_update_info' );
 	wp_clear_scheduled_hook( 'wpress_purge_event' );
 }
 
@@ -786,7 +836,7 @@ function wpress_purge_render_page() {
 	$next  = null;
 	foreach ( $files as $file ) {
 		$total += $file['size'];
-		$due    = $file['mtime'] + $ttl;
+		$due    = wpress_purge_due( $file['mtime'] );
 		$next   = null === $next ? $due : min( $next, $due );
 	}
 
@@ -878,6 +928,7 @@ function wpress_purge_render_page() {
 						esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_DEFAULT ) )
 					);
 					?>
+					<?php esc_html_e( 'Backups that were already on the server when this plugin was activated are counted from the time it was activated.', 'purge-ai1wm-backups' ); ?>
 					<?php esc_html_e( 'Checks run every 10 minutes, so a file may be deleted up to about 10 minutes late. Files are never deleted in the middle of an export.', 'purge-ai1wm-backups' ); ?>
 				</p>
 				<div class="wpp-ttl">
@@ -936,7 +987,7 @@ function wpress_purge_render_page() {
 					<ul class="wpp-files">
 						<?php foreach ( $files as $file ) : ?>
 							<?php
-							$remain = $file['mtime'] + $ttl - $now;
+							$remain = wpress_purge_due( $file['mtime'] ) - $now;
 							/* translators: %s: file name */
 							$confirm = sprintf( __( 'Delete %s? This cannot be undone.', 'purge-ai1wm-backups' ), $file['name'] );
 							?>
@@ -981,6 +1032,133 @@ function wpress_purge_render_page() {
 }
 
 /* ------------------------------------------------------------------
+   更新の知らせ（diagurity.com/wp-plugins/ からの自己配布）
+   仕様は Diagurity のリポジトリの docs/wp-plugins-update-json.md。
+   外へ送るのは更新 JSON への GET 1本だけで、サイトの URL などは付けない
+   （User-Agent を上書きする。WordPress の既定にはサイトの URL が入る）。
+   mu-plugins に置いたときは WordPress の更新の仕組みの外なので、知らせは出ない。
+------------------------------------------------------------------ */
+
+/* diagurity.com は CoreServer 上の WordPress から HTTPS で直接つながらないので、Cloudflare の Worker を読む */
+define( 'WPRESS_PURGE_UPDATE_URL', 'https://seccheck-fetcher.odd-brook-2273.workers.dev/wp-plugins/updates/purge-ai1wm-backups.json' );
+define( 'WPRESS_PURGE_UPDATE_CACHE', 'purge_ai1wm_backups_update_info' );
+
+/**
+ * 更新 JSON を読む（1日おぼえておく。失敗したときも空で1日おぼえ、管理画面を遅くしない）
+ *
+ * @return array|null version と download_url があるときだけ配列
+ */
+function wpress_purge_update_info() {
+	$cached = get_transient( WPRESS_PURGE_UPDATE_CACHE );
+	if ( false !== $cached ) {
+		return is_array( $cached ) && $cached ? $cached : null;
+	}
+
+	$info     = null;
+	$response = wp_remote_get(
+		WPRESS_PURGE_UPDATE_URL,
+		array(
+			'timeout'    => 5,
+			'user-agent' => 'purge-ai1wm-backups/' . WPRESS_PURGE_LOADED,
+		)
+	);
+	if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( is_array( $data ) && ! empty( $data['version'] ) && ! empty( $data['download_url'] ) ) {
+			$info = $data;
+		}
+	}
+
+	set_transient( WPRESS_PURGE_UPDATE_CACHE, $info ? $info : array(), DAY_IN_SECONDS );
+	return $info;
+}
+
+/* 新しい版があれば、プラグイン一覧と更新の画面に出す */
+add_filter( 'pre_set_site_transient_update_plugins', function ( $transient ) {
+	if ( empty( $transient ) || ! is_object( $transient ) ) {
+		return $transient;
+	}
+
+	$basename = plugin_basename( __FILE__ );
+	if ( empty( $transient->checked[ $basename ] ) ) {
+		return $transient; // mu-plugins など、更新の対象に入っていないとき
+	}
+
+	$info = wpress_purge_update_info();
+	if ( ! $info ) {
+		return $transient;
+	}
+
+	$item = (object) array(
+		'id'          => $basename,
+		'slug'        => 'purge-ai1wm-backups',
+		'plugin'      => $basename,
+		'new_version' => (string) $info['version'],
+		'package'     => (string) $info['download_url'],
+		'url'         => (string) ( isset( $info['homepage'] ) ? $info['homepage'] : 'https://diagurity.com/wp-plugins/purge-ai1wm-backups/' ),
+		'requires'    => isset( $info['requires'] ) ? (string) $info['requires'] : '',
+		'requires_php' => isset( $info['requires_php'] ) ? (string) $info['requires_php'] : '',
+		'tested'      => isset( $info['tested'] ) ? (string) $info['tested'] : '',
+	);
+
+	if ( version_compare( (string) $info['version'], (string) $transient->checked[ $basename ], '>' ) ) {
+		$transient->response[ $basename ] = $item;
+		unset( $transient->no_update[ $basename ] );
+	} else {
+		/* 新しくないときも載せる（一覧に自動更新の切り替えが出る） */
+		$transient->no_update[ $basename ] = $item;
+		unset( $transient->response[ $basename ] );
+	}
+
+	return $transient;
+} );
+
+/* 「詳細を表示」の中身 */
+add_filter( 'plugins_api', function ( $result, $action, $args ) {
+	if ( 'plugin_information' !== $action || empty( $args->slug ) || 'purge-ai1wm-backups' !== $args->slug ) {
+		return $result;
+	}
+
+	$info = wpress_purge_update_info();
+	if ( ! $info ) {
+		return $result;
+	}
+
+	$lang     = 0 === strpos( get_user_locale(), 'ja' ) ? 'ja' : 'en';
+	$sections = array();
+	foreach ( array( 'description', 'changelog' ) as $key ) {
+		if ( isset( $info['sections'][ $key ][ $lang ] ) ) {
+			$sections[ $key ] = (string) $info['sections'][ $key ][ $lang ];
+		} elseif ( isset( $info['sections'][ $key ]['en'] ) ) {
+			$sections[ $key ] = (string) $info['sections'][ $key ]['en'];
+		}
+	}
+
+	return (object) array(
+		'name'          => isset( $info['name'] ) ? (string) $info['name'] : 'Purge AI1WM Backups',
+		'slug'          => 'purge-ai1wm-backups',
+		'version'       => (string) $info['version'],
+		'author'        => '<a href="https://diagurity.com/">Diagurity</a>',
+		'requires'      => isset( $info['requires'] ) ? (string) $info['requires'] : '',
+		'requires_php'  => isset( $info['requires_php'] ) ? (string) $info['requires_php'] : '',
+		'tested'        => isset( $info['tested'] ) ? (string) $info['tested'] : '',
+		'last_updated'  => isset( $info['last_updated'] ) ? (string) $info['last_updated'] : '',
+		'homepage'      => isset( $info['homepage'] ) ? (string) $info['homepage'] : 'https://diagurity.com/wp-plugins/purge-ai1wm-backups/',
+		'download_link' => (string) $info['download_url'],
+		'sections'      => $sections,
+	);
+}, 20, 3 );
+
+/* 「更新を確認」を押したときと、更新が終わったときは取り直す */
+add_action( 'load-update-core.php', 'wpress_purge_flush_update_cache' );
+add_action( 'upgrader_process_complete', 'wpress_purge_flush_update_cache' );
+
+/** おぼえている更新 JSON を捨てる */
+function wpress_purge_flush_update_cache() {
+	delete_transient( WPRESS_PURGE_UPDATE_CACHE );
+}
+
+/* ------------------------------------------------------------------
    削除に失敗したときの管理画面通知
    パーミッション等で消せず、黙って溜まり続けるのを防ぐ
 ------------------------------------------------------------------ */
@@ -1003,4 +1181,60 @@ add_action( 'admin_notices', function () {
 		/* translators: %s: list of file names */
 		. sprintf( esc_html__( 'Files: %s', 'purge-ai1wm-backups' ), $list )
 		. '</p></div>';
+} );
+
+/* ------------------------------------------------------------------
+   有効化する前からあったバックアップの予告
+   有効化した直後に、いつ消えるかを知らせる（必要なら先に落とせるように）
+------------------------------------------------------------------ */
+
+add_action( 'admin_notices', function () {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	/* 設定画面には一覧と残り時間が出ているので出さない */
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	if ( $screen && 'settings_page_' . WPRESS_PURGE_PAGE === $screen->id ) {
+		return;
+	}
+
+	$since = wpress_purge_since();
+	$now   = time();
+	$count = 0;
+	$next  = null;
+
+	foreach ( wpress_purge_list_files() as $file ) {
+		if ( $file['mtime'] >= $since ) {
+			continue;
+		}
+		$due = wpress_purge_due( $file['mtime'] );
+		if ( $due <= $now ) {
+			continue;
+		}
+		$count++;
+		$next = null === $next ? $due : min( $next, $due );
+	}
+
+	if ( ! $count ) {
+		return;
+	}
+
+	echo '<div class="notice notice-warning"><p>'
+		. esc_html(
+			sprintf(
+				/* translators: 1: number of backups, 2: remaining time */
+				_n(
+					'%1$d backup (.wpress) that was already on the server will be deleted automatically in about %2$s. Download it before then if you need it.',
+					'%1$d backups (.wpress) that were already on the server will be deleted automatically in about %2$s. Download them before then if you need them.',
+					$count,
+					'purge-ai1wm-backups'
+				),
+				$count,
+				wpress_purge_format_duration( $next - $now )
+			)
+		)
+		. ' <a href="' . esc_url( admin_url( 'options-general.php?page=' . WPRESS_PURGE_PAGE ) ) . '">'
+		. esc_html__( 'See the backups', 'purge-ai1wm-backups' )
+		. '</a></p></div>';
 } );

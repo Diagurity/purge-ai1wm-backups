@@ -1,6 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: purge-ai1wm-backups 1.3.1\n"
+"Project-Id-Version: purge-ai1wm-backups 1.4.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-24 14:18+0900\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -12,105 +14,245 @@ msgstr ""
 msgid "Automatically deletes All-in-One WP Migration backups (.wpress) once the time you set has passed. Set the time under Settings → Purge AI1WM Backups. Not an official ServMask extension."
 msgstr "All-in-One WP Migration のバックアップ（.wpress）を、指定した時間がたったら自動で削除します。削除までの時間は「設定 → バックアップ自動削除」で変えられます。ServMask 社の公式の拡張機能ではありません。"
 
-msgctxt "settings menu"
-msgid "Purge AI1WM Backups"
-msgstr "バックアップ自動削除"
-
-msgid "Settings"
-msgstr "設定"
-
+#. translators: %d: number of days
+#: purge-ai1wm-backups.php:131
 #, php-format
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] "%d日"
 
+#. translators: %d: number of hours
+#: purge-ai1wm-backups.php:135
 #, php-format
 msgid "%d hour"
 msgid_plural "%d hours"
 msgstr[0] "%d時間"
 
+#. translators: %d: number of minutes
+#: purge-ai1wm-backups.php:139
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] "%d分"
 
+#: purge-ai1wm-backups.php:141
 msgctxt "between parts of a duration"
 msgid ", "
 msgstr "と"
 
+#. translators: 1: shortest time, 2: longest time
+#: purge-ai1wm-backups.php:328
 #, php-format
-msgid "Set a time between %1$s and %2$s. The value was changed to fit that range and saved."
-msgstr "削除までの時間は %1$s〜%2$s の間で指定してください。範囲に収まる値に直して保存しました。"
+msgid ""
+"Set a time between %1$s and %2$s. The value was changed to fit that range "
+"and saved."
+msgstr ""
+"削除までの時間は %1$s〜%2$s の間で指定してください。範囲に収まる値に直して保"
+"存しました。"
 
-msgid "This plugin is an add-on for All-in-One WP Migration (AI1WM). It is not an official ServMask extension."
-msgstr "このプラグインは All-in-One WP Migration（AI1WM）の拡張です。ServMask 社の公式の拡張機能ではありません。"
+#: purge-ai1wm-backups.php:341
+msgctxt "settings menu"
+msgid "Purge AI1WM Backups"
+msgstr "バックアップ自動削除"
 
-msgid "Backups (.wpress) made by an AI1WM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed."
-msgstr "AI1WM のエクスポートで作られたバックアップ（.wpress）は、サイトの公開フォルダに置かれたままになり、URL が分かれば誰でもダウンロードできます。中身はサイト全体（データベースと wp-config.php を含む）なので、指定した時間がたったら自動で削除します。"
+#: purge-ai1wm-backups.php:353
+msgid "Settings"
+msgstr "設定"
 
-msgid "All-in-One WP Migration is not active. This plugin is meant to delete AI1WM backups. Any .wpress files left on the server are still deleted without AI1WM."
-msgstr "All-in-One WP Migration が有効になっていません。このプラグインは AI1WM のバックアップを消すためのものです。残っている .wpress がある場合は、AI1WM が無くても削除は動きます。"
+#: purge-ai1wm-backups.php:666
+msgid "You are not allowed to delete backups."
+msgstr "バックアップを削除する権限がありません。"
 
-msgid "Time until deletion"
-msgstr "削除までの時間"
+#: purge-ai1wm-backups.php:784
+msgid "Nothing to delete"
+msgstr "なし"
 
-msgid "Unit"
-msgstr "単位"
-
-msgid "minutes"
-msgstr "分"
-
-msgid "hours"
-msgstr "時間"
-
-msgid "days"
-msgstr "日"
-
-#, php-format
-msgid "A backup is deleted once this much time has passed since it was last written. You can set %1$s to %2$s (default: %3$s)."
-msgstr "バックアップが最後に書き込まれてから、この時間がたつと削除します。%1$s〜%2$sの間で指定できます（既定は%3$s）。"
-
-msgid "Checks run every 10 minutes, so a file may be deleted up to about 10 minutes late. Files are never deleted in the middle of an export."
-msgstr "確認は10分ごとなので、実際に消えるのは最大で10分ほど遅れます。エクスポートの途中で消えることはありません。"
-
-#, php-format
-msgid "Fixed to %1$s by %2$s in wp-config.php, so it cannot be changed here."
-msgstr "wp-config.php の %2$s で %1$s に固定されているため、ここでは変えられません。"
-
-msgid "Backups on the server now"
-msgstr "いま残っているバックアップ"
-
-msgid "None."
-msgstr "ありません。"
-
-msgid "File"
-msgstr "ファイル"
-
-msgid "Size"
-msgstr "大きさ"
-
-msgid "Last written"
-msgstr "最後の書き込み"
-
-msgid "Deleted"
-msgstr "削除の目安"
-
+#. translators: %s: remaining time
+#: purge-ai1wm-backups.php:787
 #, php-format
 msgid "in about %s"
 msgstr "あと約%s"
 
+#: purge-ai1wm-backups.php:789
 msgid "at the next check"
 msgstr "次の確認で削除"
 
+#: purge-ai1wm-backups.php:798
+msgid "minutes"
+msgstr "分"
+
+#: purge-ai1wm-backups.php:799
+msgid "hours"
+msgstr "時間"
+
+#: purge-ai1wm-backups.php:800
+msgid "days"
+msgstr "日"
+
+#: purge-ai1wm-backups.php:808
+msgid ""
+"Backups (.wpress) made by an AI1WM export stay in a public folder of the "
+"site, and anyone who knows the URL can download them. They contain the whole "
+"site, including the database and wp-config.php, so this plugin deletes them "
+"automatically once the time you set has passed."
+msgstr ""
+"AI1WM のエクスポートで作られたバックアップ（.wpress）は、サイトの公開フォルダ"
+"に置かれたままになり、URL が分かれば誰でもダウンロードできます。中身はサイト"
+"全体（データベースと wp-config.php を含む）なので、指定した時間がたったら自動"
+"で削除します。"
+
+#: purge-ai1wm-backups.php:809
+msgid ""
+"This plugin is an add-on for All-in-One WP Migration (AI1WM). It is not an "
+"official ServMask extension."
+msgstr ""
+"このプラグインは All-in-One WP Migration（AI1WM）の拡張です。ServMask 社の公"
+"式の拡張機能ではありません。"
+
+#. translators: %d: number of backups
+#: purge-ai1wm-backups.php:817
+#, php-format
+msgid "Deleted %d backup."
+msgid_plural "Deleted %d backups."
+msgstr[0] "バックアップを %d 件削除しました。"
+
+#. translators: %d: number of backups
+#: purge-ai1wm-backups.php:825
+#, php-format
+msgid ""
+"Could not delete %d backup. Check that the ai1wm-backups folder is writable."
+msgid_plural ""
+"Could not delete %d backups. Check that the ai1wm-backups folder is writable."
+msgstr[0] ""
+"バックアップ %d 件を削除できませんでした。ai1wm-backups フォルダの書き込み権"
+"限をご確認ください。"
+
+#: purge-ai1wm-backups.php:831
+msgid ""
+"All-in-One WP Migration is not active. This plugin is meant to delete AI1WM "
+"backups. Any .wpress files left on the server are still deleted without "
+"AI1WM."
+msgstr ""
+"All-in-One WP Migration が有効になっていません。このプラグインは AI1WM のバッ"
+"クアップを消すためのものです。残っている .wpress がある場合は、AI1WM が無くて"
+"も削除は動きます。"
+
+#: purge-ai1wm-backups.php:837
+msgid "Backups on the server"
+msgstr "残っているバックアップ"
+
+#. translators: %d: number of files
+#: purge-ai1wm-backups.php:841
+#, php-format
+msgid "%d file"
+msgid_plural "%d files"
+msgstr[0] "%d 件"
+
+#: purge-ai1wm-backups.php:846
+msgid "Total size"
+msgstr "合計サイズ"
+
+#: purge-ai1wm-backups.php:850
+msgid "Next auto-delete"
+msgstr "次の自動削除"
+
+#: purge-ai1wm-backups.php:860
+msgid "Time until deletion"
+msgstr "削除までの時間"
+
+#. translators: 1: shortest time, 2: longest time, 3: default time
+#: purge-ai1wm-backups.php:865
+#, php-format
+msgid ""
+"A backup is deleted once this much time has passed since it was last "
+"written. You can set %1$s to %2$s (default: %3$s)."
+msgstr ""
+"バックアップが最後に書き込まれてから、この時間がたつと削除します。%1$s〜%2$s"
+"の間で指定できます（既定は%3$s）。"
+
+#: purge-ai1wm-backups.php:871
+msgid ""
+"Checks run every 10 minutes, so a file may be deleted up to about 10 minutes "
+"late. Files are never deleted in the middle of an export."
+msgstr ""
+"確認は10分ごとなので、実際に消えるのは最大で10分ほど遅れます。エクスポートの"
+"途中で消えることはありません。"
+
+#: purge-ai1wm-backups.php:876
+msgid "Unit"
+msgstr "単位"
+
+#. translators: 1: time, 2: constant name
+#: purge-ai1wm-backups.php:890
+#, php-format
+msgid "Fixed to %1$s by %2$s in wp-config.php, so it cannot be changed here."
+msgstr ""
+"wp-config.php の %2$s で %1$s に固定されているため、ここでは変えられません。"
+
+#: purge-ai1wm-backups.php:911
+msgid "Backups on the server now"
+msgstr "いま残っているバックアップ"
+
+#. translators: %d: number of backups
+#: purge-ai1wm-backups.php:915
+#, php-format
+msgid "Delete %d backup? This cannot be undone."
+msgid_plural "Delete all %d backups? This cannot be undone."
+msgstr[0] "バックアップ %d 件をすべて削除しますか？元に戻せません。"
+
+#: purge-ai1wm-backups.php:918
+msgid "Delete all"
+msgstr "すべて削除"
+
+#: purge-ai1wm-backups.php:924
+msgid "No backups right now."
+msgstr "いま残っているバックアップはありません。"
+
+#. translators: %s: file name
+#: purge-ai1wm-backups.php:931
+#, php-format
+msgid "Delete %s? This cannot be undone."
+msgstr "%s を削除しますか？元に戻せません。"
+
+#. translators: %s: date and time
+#: purge-ai1wm-backups.php:942
+#, php-format
+msgid "Last written %s"
+msgstr "最後の書き込み %s"
+
+#. translators: %s: remaining time
+#: purge-ai1wm-backups.php:951
+#, php-format
+msgid "Auto-deletes in about %s"
+msgstr "あと約%sで自動削除"
+
+#: purge-ai1wm-backups.php:952
+msgid "Auto-deletes at the next check"
+msgstr "次の確認で自動削除"
+
+#: purge-ai1wm-backups.php:957
+msgid "Delete"
+msgstr "削除"
+
+#: purge-ai1wm-backups.php:966
 msgid "Open the AI1WM backups screen"
 msgstr "AI1WM のバックアップ画面を開く"
 
+#: purge-ai1wm-backups.php:991
 msgid "Could not auto-delete All-in-One WP Migration backups (.wpress)."
-msgstr "All-in-One WP Migration のバックアップ（.wpress）の自動削除に失敗しました。"
+msgstr ""
+"All-in-One WP Migration のバックアップ（.wpress）の自動削除に失敗しました。"
 
-msgid "Check that the ai1wm-backups folder is writable. You can also delete the files by FTP."
-msgstr "ai1wm-backups ディレクトリの書き込み権限をご確認ください（FTP などで手動で削除することもできます）。"
+#: purge-ai1wm-backups.php:992
+msgid ""
+"Check that the ai1wm-backups folder is writable. You can also delete the "
+"files by FTP."
+msgstr ""
+"ai1wm-backups ディレクトリの書き込み権限をご確認ください（FTP などで手動で削"
+"除することもできます）。"
 
+#. translators: %s: list of file names
+#: purge-ai1wm-backups.php:994
 #, php-format
 msgid "Files: %s"
 msgstr "対象: %s"

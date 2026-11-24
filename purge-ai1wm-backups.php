@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Purge AI1WM Backups
  * Description: Automatically deletes All-in-One WP Migration backups (.wpress) once the time you set has passed. Set the time under Settings → Purge AI1WM Backups. Not an official ServMask extension.
- * Version:     1.3.1
+ * Version:     1.4.0
  * Author:      Diagurity
  * License:     GPL-2.0-or-later
  * Text Domain: purge-ai1wm-backups
@@ -45,7 +45,7 @@ defined( 'ABSPATH' ) || exit;
 if ( defined( 'WPRESS_PURGE_LOADED' ) ) {
 	return;
 }
-define( 'WPRESS_PURGE_LOADED', '1.3.1' );
+define( 'WPRESS_PURGE_LOADED', '1.4.0' );
 
 /*
  * 画面の文言は英語で書き、日本語は languages/ の翻訳ファイルに置く。
@@ -355,6 +355,400 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function ( $li
 	return $links;
 } );
 
+/* ------------------------------------------------------------------
+   設定画面の見た目
+   1ファイルで mu-plugins にも置けるよう、CSS はこのファイルの中に持ち、
+   この画面を開いたときだけ読み込む。
+------------------------------------------------------------------ */
+
+add_action( 'admin_enqueue_scripts', function ( $hook ) {
+	if ( 'settings_page_' . WPRESS_PURGE_PAGE !== $hook ) {
+		return;
+	}
+	wp_register_style( 'wpress-purge-admin', false, array(), WPRESS_PURGE_LOADED );
+	wp_enqueue_style( 'wpress-purge-admin' );
+	wp_add_inline_style( 'wpress-purge-admin', wpress_purge_admin_css() );
+} );
+
+/** 設定画面の CSS */
+function wpress_purge_admin_css() {
+	return <<<'CSS'
+.wpp {
+	--wpp-accent: var(--wp-admin-theme-color, #2271b1);
+	--wpp-line: #dcdcde;
+	--wpp-muted: #646970;
+	--wpp-ok: #00a32a;
+	--wpp-ok-soft: #edfaef;
+	--wpp-warn: #996800;
+	--wpp-warn-soft: #fcf9e8;
+	--wpp-danger: #b32d2e;
+	--wpp-danger-soft: #fcf0f1;
+	max-width: 900px;
+	font-size: 13px;
+}
+.wpp-hero {
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	margin: 16px 0 20px;
+	padding: 24px 28px;
+	border-radius: 12px;
+	color: #fff;
+	background: linear-gradient(135deg, #0e7490, #1d4ed8);
+	box-shadow: 0 6px 20px rgba(14, 116, 144, 0.25);
+}
+.wpp-hero > .dashicons {
+	flex: none;
+	width: 52px;
+	height: 52px;
+	font-size: 30px;
+	line-height: 52px;
+	text-align: center;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.18);
+}
+.wpp-hero h1 {
+	margin: 0 0 4px;
+	padding: 0;
+	color: #fff;
+	font-size: 22px;
+	font-weight: 700;
+}
+.wpp-hero p {
+	margin: 0;
+	color: rgba(255, 255, 255, 0.88);
+	font-size: 14px;
+}
+.wpp-hero .wpp-badge {
+	display: inline-block;
+	margin-top: 8px;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.18);
+	color: #fff;
+	font-size: 12px;
+}
+.wpp-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-bottom: 12px;
+}
+.wpp-card {
+	margin-bottom: 12px;
+	padding: 20px 22px;
+	border: 1px solid var(--wpp-line);
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.wpp-stat-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--wpp-muted);
+}
+.wpp-stat-label .dashicons {
+	color: var(--wpp-accent);
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+.wpp-stat-value {
+	margin-top: 6px;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.3;
+}
+.wpp-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 6px;
+}
+.wpp-card-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 15px;
+}
+.wpp-card-title .dashicons {
+	color: var(--wpp-accent);
+}
+.wpp-note {
+	margin: 0;
+	color: var(--wpp-muted);
+}
+.wpp-ttl {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-top: 14px;
+}
+.wpp-ttl input[type="number"] {
+	width: 90px;
+	font-size: 18px !important;
+	font-weight: 600;
+	text-align: right;
+}
+.wpp-chips {
+	display: flex;
+	gap: 6px;
+}
+.wpp-chip input {
+	position: absolute;
+	opacity: 0;
+}
+.wpp-chip span {
+	display: inline-block;
+	padding: 7px 16px;
+	border: 1px solid var(--wpp-line);
+	border-radius: 999px;
+	background: #f6f7f7;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+.wpp-chip input:checked + span {
+	border-color: var(--wpp-accent);
+	background: var(--wpp-accent);
+	color: #fff;
+}
+.wpp-chip input:focus-visible + span {
+	outline: 2px solid var(--wpp-accent);
+	outline-offset: 2px;
+}
+.wpp-chip input:disabled + span {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+.wpp-lock {
+	margin: 12px 0 0;
+	padding: 8px 12px;
+	border-radius: 6px;
+	background: var(--wpp-warn-soft);
+	color: var(--wpp-warn);
+}
+.wpp .submit {
+	margin: 4px 0 20px;
+	padding: 0;
+}
+.wpp-flash {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 12px;
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-weight: 600;
+}
+.wpp-flash.is-ok {
+	background: var(--wpp-ok-soft);
+	color: #00661b;
+}
+.wpp-flash.is-error {
+	background: var(--wpp-danger-soft);
+	color: #8a2424;
+}
+.wpp-flash.is-warn {
+	background: var(--wpp-warn-soft);
+	color: var(--wpp-warn);
+	font-weight: 400;
+}
+.wpp-files {
+	margin: 14px 0 0;
+	padding: 0;
+	list-style: none;
+}
+.wpp-file {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+	padding: 12px 0;
+	border-top: 1px solid #f0f0f1;
+}
+.wpp-file:first-child {
+	border-top: 0;
+}
+.wpp-file > .dashicons {
+	flex: none;
+	color: var(--wpp-muted);
+}
+.wpp-file-main {
+	flex: 1;
+	min-width: 0;
+}
+.wpp-file-name {
+	display: block;
+	overflow: hidden;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.wpp-file-meta {
+	color: var(--wpp-muted);
+}
+.wpp-pill {
+	flex: none;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: #f0f6fc;
+	color: var(--wpp-accent);
+	font-size: 12px;
+	white-space: nowrap;
+}
+.wpp-pill.is-due {
+	background: var(--wpp-warn-soft);
+	color: var(--wpp-warn);
+}
+.wpp .button.wpp-delete {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border-color: var(--wpp-danger);
+	color: var(--wpp-danger);
+}
+.wpp .button.wpp-delete:hover,
+.wpp .button.wpp-delete:focus {
+	border-color: var(--wpp-danger);
+	background: var(--wpp-danger-soft);
+	color: var(--wpp-danger);
+}
+.wpp .button.wpp-delete .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+.wpp-empty {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 14px 0 0;
+	padding: 14px;
+	border: 1px dashed var(--wpp-line);
+	border-radius: 8px;
+	color: var(--wpp-muted);
+}
+.wpp-empty .dashicons {
+	color: var(--wpp-ok);
+}
+.wpp-foot {
+	margin: 12px 0 0;
+}
+@media (max-width: 782px) {
+	.wpp-stats {
+		grid-template-columns: 1fr;
+	}
+	.wpp-file {
+		flex-wrap: wrap;
+	}
+}
+CSS;
+}
+
+/* ------------------------------------------------------------------
+   一覧からの手動削除（1件・すべて）
+------------------------------------------------------------------ */
+
+add_action( 'admin_post_wpress_purge_delete', 'wpress_purge_handle_delete' );
+
+/**
+ * 一覧の「削除」「すべて削除」を受けて消す
+ *
+ * 消せるのはバックアップの置き場所の直下にある *.wpress だけ。送られてきた
+ * ファイル名は basename に落とし、realpath で置き場所の中にあることを確かめる。
+ */
+function wpress_purge_handle_delete() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You are not allowed to delete backups.', 'purge-ai1wm-backups' ), 403 );
+	}
+	check_admin_referer( 'wpress_purge_delete' );
+
+	$dir     = wpress_purge_dir();
+	$realdir = is_dir( $dir ) ? realpath( $dir ) : false;
+	$targets = array();
+
+	if ( $realdir ) {
+		if ( ! empty( $_POST['all'] ) ) {
+			$targets = glob( trailingslashit( $realdir ) . '*.wpress' );
+			$targets = is_array( $targets ) ? $targets : array();
+		} elseif ( isset( $_POST['file'] ) ) {
+			$name = basename( (string) wp_unslash( $_POST['file'] ) );
+			if ( preg_match( '/\.wpress$/i', $name ) ) {
+				$targets[] = trailingslashit( $realdir ) . $name;
+			}
+		}
+	}
+
+	$deleted = array();
+	$failed  = array();
+
+	foreach ( $targets as $target ) {
+		$real = realpath( $target );
+		if ( ! $real || dirname( $real ) !== $realdir || ! is_file( $real ) ) {
+			continue;
+		}
+		if ( @unlink( $real ) ) {
+			$deleted[] = basename( $real );
+		} else {
+			$failed[] = basename( $real );
+		}
+	}
+
+	if ( $deleted ) {
+		error_log( sprintf(
+			'[wpress-purge] Deleted %d .wpress file(s) from the settings screen: %s',
+			count( $deleted ),
+			implode( ', ', $deleted )
+		) );
+	}
+
+	wp_safe_redirect( add_query_arg(
+		array(
+			'page'           => WPRESS_PURGE_PAGE,
+			'wpress_deleted' => count( $deleted ),
+			'wpress_failed'  => count( $failed ),
+		),
+		admin_url( 'options-general.php' )
+	) );
+	exit;
+}
+
+/* ------------------------------------------------------------------
+   設定画面
+------------------------------------------------------------------ */
+
+/**
+ * 残っている .wpress（新しい順）
+ *
+ * @return array[] name, size, mtime
+ */
+function wpress_purge_list_files() {
+	$dir   = wpress_purge_dir();
+	$paths = is_dir( $dir ) ? glob( trailingslashit( $dir ) . '*.wpress' ) : array();
+	$files = array();
+
+	foreach ( is_array( $paths ) ? $paths : array() as $path ) {
+		if ( ! is_file( $path ) ) {
+			continue;
+		}
+		$files[] = array(
+			'name'  => basename( $path ),
+			'size'  => (int) filesize( $path ),
+			'mtime' => (int) filemtime( $path ),
+		);
+	}
+
+	usort( $files, function ( $a, $b ) {
+		return $b['mtime'] - $a['mtime'];
+	} );
+
+	return $files;
+}
+
 /** 設定画面を出す */
 function wpress_purge_render_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
@@ -363,6 +757,8 @@ function wpress_purge_render_page() {
 
 	$ttl    = wpress_purge_ttl();
 	$locked = defined( 'WPRESS_PURGE_TTL' );
+	$files  = wpress_purge_list_files();
+	$now    = time();
 
 	/* 欄に出す値は、割り切れるいちばん大きい単位で */
 	if ( 0 === $ttl % 86400 ) {
@@ -375,127 +771,203 @@ function wpress_purge_render_page() {
 		$amount = (int) round( $ttl / 60 );
 		$unit   = 'minute';
 	}
-	?>
-	<div class="wrap">
-		<h1><?php echo 'Purge AI1WM Backups'; ?></h1>
 
-		<div class="notice notice-info inline">
-			<p>
-				<strong><?php esc_html_e( 'This plugin is an add-on for All-in-One WP Migration (AI1WM). It is not an official ServMask extension.', 'purge-ai1wm-backups' ); ?></strong><br>
-				<?php esc_html_e( 'Backups (.wpress) made by an AI1WM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed.', 'purge-ai1wm-backups' ); ?>
-			</p>
+	$total = 0;
+	$next  = null;
+	foreach ( $files as $file ) {
+		$total += $file['size'];
+		$due    = $file['mtime'] + $ttl;
+		$next   = null === $next ? $due : min( $next, $due );
+	}
+
+	if ( null === $next ) {
+		$next_label = __( 'Nothing to delete', 'purge-ai1wm-backups' );
+	} elseif ( $next > $now ) {
+		/* translators: %s: remaining time */
+		$next_label = sprintf( __( 'in about %s', 'purge-ai1wm-backups' ), wpress_purge_format_duration( $next - $now ) );
+	} else {
+		$next_label = __( 'at the next check', 'purge-ai1wm-backups' );
+	}
+
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- 削除の結果を表示するだけ
+	$deleted_count = isset( $_GET['wpress_deleted'] ) ? absint( $_GET['wpress_deleted'] ) : 0;
+	$failed_count  = isset( $_GET['wpress_failed'] ) ? absint( $_GET['wpress_failed'] ) : 0;
+	// phpcs:enable
+
+	$units = array(
+		'minute' => __( 'minutes', 'purge-ai1wm-backups' ),
+		'hour'   => __( 'hours', 'purge-ai1wm-backups' ),
+		'day'    => __( 'days', 'purge-ai1wm-backups' ),
+	);
+	?>
+	<div class="wrap wpp">
+		<div class="wpp-hero">
+			<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+			<div>
+				<h1>Purge AI1WM Backups</h1>
+				<p><?php esc_html_e( 'Backups (.wpress) made by an AI1WM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed.', 'purge-ai1wm-backups' ); ?></p>
+				<span class="wpp-badge"><?php esc_html_e( 'This plugin is an add-on for All-in-One WP Migration (AI1WM). It is not an official ServMask extension.', 'purge-ai1wm-backups' ); ?></span>
+			</div>
 		</div>
 
-		<?php if ( ! wpress_purge_ai1wm_active() ) : ?>
-			<div class="notice notice-warning inline">
-				<p><?php esc_html_e( 'All-in-One WP Migration is not active. This plugin is meant to delete AI1WM backups. Any .wpress files left on the server are still deleted without AI1WM.', 'purge-ai1wm-backups' ); ?></p>
-			</div>
+		<?php if ( $deleted_count ) : ?>
+			<p class="wpp-flash is-ok"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
+				<?php
+				/* translators: %d: number of backups */
+				echo esc_html( sprintf( _n( 'Deleted %d backup.', 'Deleted %d backups.', $deleted_count, 'purge-ai1wm-backups' ), $deleted_count ) );
+				?>
+			</p>
 		<?php endif; ?>
+		<?php if ( $failed_count ) : ?>
+			<p class="wpp-flash is-error"><span class="dashicons dashicons-warning" aria-hidden="true"></span>
+				<?php
+				/* translators: %d: number of backups */
+				echo esc_html( sprintf( _n( 'Could not delete %d backup. Check that the ai1wm-backups folder is writable.', 'Could not delete %d backups. Check that the ai1wm-backups folder is writable.', $failed_count, 'purge-ai1wm-backups' ), $failed_count ) );
+				?>
+			</p>
+		<?php endif; ?>
+		<?php if ( ! wpress_purge_ai1wm_active() ) : ?>
+			<p class="wpp-flash is-warn"><span class="dashicons dashicons-info" aria-hidden="true"></span>
+				<?php esc_html_e( 'All-in-One WP Migration is not active. This plugin is meant to delete AI1WM backups. Any .wpress files left on the server are still deleted without AI1WM.', 'purge-ai1wm-backups' ); ?>
+			</p>
+		<?php endif; ?>
+
+		<div class="wpp-stats">
+			<div class="wpp-card">
+				<span class="wpp-stat-label"><span class="dashicons dashicons-archive" aria-hidden="true"></span><?php esc_html_e( 'Backups on the server', 'purge-ai1wm-backups' ); ?></span>
+				<div class="wpp-stat-value">
+					<?php
+					/* translators: %d: number of files */
+					echo esc_html( sprintf( _n( '%d file', '%d files', count( $files ), 'purge-ai1wm-backups' ), count( $files ) ) );
+					?>
+				</div>
+			</div>
+			<div class="wpp-card">
+				<span class="wpp-stat-label"><span class="dashicons dashicons-database" aria-hidden="true"></span><?php esc_html_e( 'Total size', 'purge-ai1wm-backups' ); ?></span>
+				<div class="wpp-stat-value"><?php echo esc_html( $files ? size_format( $total, 1 ) : '0 B' ); ?></div>
+			</div>
+			<div class="wpp-card">
+				<span class="wpp-stat-label"><span class="dashicons dashicons-clock" aria-hidden="true"></span><?php esc_html_e( 'Next auto-delete', 'purge-ai1wm-backups' ); ?></span>
+				<div class="wpp-stat-value"><?php echo esc_html( $next_label ); ?></div>
+			</div>
+		</div>
 
 		<?php /* 保存結果の知らせは「設定」メニューの画面なら WordPress が出す（ここで出すと2つ並ぶ） */ ?>
 
 		<form method="post" action="options.php">
 			<?php settings_fields( 'wpress_purge' ); ?>
-			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row"><label for="wpress_purge_ttl"><?php esc_html_e( 'Time until deletion', 'purge-ai1wm-backups' ); ?></label></th>
-					<td>
-						<input type="number" id="wpress_purge_ttl" name="<?php echo esc_attr( WPRESS_PURGE_TTL_OPTION ); ?>"
-							value="<?php echo esc_attr( $amount ); ?>" min="1" step="1" class="small-text" <?php disabled( $locked ); ?>>
-						<select name="wpress_purge_ttl_unit" aria-label="<?php esc_attr_e( 'Unit', 'purge-ai1wm-backups' ); ?>" <?php disabled( $locked ); ?>>
-							<option value="minute" <?php selected( $unit, 'minute' ); ?>><?php esc_html_e( 'minutes', 'purge-ai1wm-backups' ); ?></option>
-							<option value="hour" <?php selected( $unit, 'hour' ); ?>><?php esc_html_e( 'hours', 'purge-ai1wm-backups' ); ?></option>
-							<option value="day" <?php selected( $unit, 'day' ); ?>><?php esc_html_e( 'days', 'purge-ai1wm-backups' ); ?></option>
-						</select>
-						<p class="description">
-							<?php
-							printf(
-								/* translators: 1: shortest time, 2: longest time, 3: default time */
-								esc_html__( 'A backup is deleted once this much time has passed since it was last written. You can set %1$s to %2$s (default: %3$s).', 'purge-ai1wm-backups' ),
-								esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MIN ) ),
-								esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MAX ) ),
-								esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_DEFAULT ) )
-							);
-							?>
-							<br>
-							<?php esc_html_e( 'Checks run every 10 minutes, so a file may be deleted up to about 10 minutes late. Files are never deleted in the middle of an export.', 'purge-ai1wm-backups' ); ?>
-						</p>
-						<?php if ( $locked ) : ?>
-							<p class="description"><strong>
-							<?php
-							printf(
-								/* translators: 1: time, 2: constant name */
-								esc_html__( 'Fixed to %1$s by %2$s in wp-config.php, so it cannot be changed here.', 'purge-ai1wm-backups' ),
-								esc_html( wpress_purge_format_duration( $ttl ) ),
-								'<code>WPRESS_PURGE_TTL</code>'
-							);
-							?>
-							</strong></p>
-						<?php endif; ?>
-					</td>
-				</tr>
-			</table>
+			<div class="wpp-card">
+				<h2 class="wpp-card-title"><span class="dashicons dashicons-backup" aria-hidden="true"></span><label for="wpress_purge_ttl"><?php esc_html_e( 'Time until deletion', 'purge-ai1wm-backups' ); ?></label></h2>
+				<p class="wpp-note">
+					<?php
+					printf(
+						/* translators: 1: shortest time, 2: longest time, 3: default time */
+						esc_html__( 'A backup is deleted once this much time has passed since it was last written. You can set %1$s to %2$s (default: %3$s).', 'purge-ai1wm-backups' ),
+						esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MIN ) ),
+						esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_MAX ) ),
+						esc_html( wpress_purge_format_duration( WPRESS_PURGE_TTL_DEFAULT ) )
+					);
+					?>
+					<?php esc_html_e( 'Checks run every 10 minutes, so a file may be deleted up to about 10 minutes late. Files are never deleted in the middle of an export.', 'purge-ai1wm-backups' ); ?>
+				</p>
+				<div class="wpp-ttl">
+					<input type="number" id="wpress_purge_ttl" name="<?php echo esc_attr( WPRESS_PURGE_TTL_OPTION ); ?>"
+						value="<?php echo esc_attr( $amount ); ?>" min="1" step="1" <?php disabled( $locked ); ?>>
+					<div class="wpp-chips" role="radiogroup" aria-label="<?php esc_attr_e( 'Unit', 'purge-ai1wm-backups' ); ?>">
+						<?php foreach ( $units as $value => $label ) : ?>
+							<label class="wpp-chip">
+								<input type="radio" name="wpress_purge_ttl_unit" value="<?php echo esc_attr( $value ); ?>" <?php checked( $unit, $value ); ?> <?php disabled( $locked ); ?>>
+								<span><?php echo esc_html( $label ); ?></span>
+							</label>
+						<?php endforeach; ?>
+					</div>
+				</div>
+				<?php if ( $locked ) : ?>
+					<p class="wpp-lock">
+						<?php
+						printf(
+							/* translators: 1: time, 2: constant name */
+							esc_html__( 'Fixed to %1$s by %2$s in wp-config.php, so it cannot be changed here.', 'purge-ai1wm-backups' ),
+							esc_html( wpress_purge_format_duration( $ttl ) ),
+							'<code>WPRESS_PURGE_TTL</code>'
+						);
+						?>
+					</p>
+				<?php endif; ?>
+			</div>
 			<?php
 			if ( ! $locked ) {
-				submit_button();
+				submit_button( null, 'primary large' );
 			}
 			?>
 		</form>
 
-		<h2><?php esc_html_e( 'Backups on the server now', 'purge-ai1wm-backups' ); ?></h2>
-		<?php wpress_purge_render_files( $ttl ); ?>
+		<div class="wpp-card">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="wpress_purge_delete">
+				<?php wp_nonce_field( 'wpress_purge_delete' ); ?>
+
+				<div class="wpp-card-head">
+					<h2 class="wpp-card-title"><span class="dashicons dashicons-media-archive" aria-hidden="true"></span><?php esc_html_e( 'Backups on the server now', 'purge-ai1wm-backups' ); ?></h2>
+					<?php if ( count( $files ) > 1 ) : ?>
+						<?php
+						/* translators: %d: number of backups */
+						$confirm_all = sprintf( _n( 'Delete %d backup? This cannot be undone.', 'Delete all %d backups? This cannot be undone.', count( $files ), 'purge-ai1wm-backups' ), count( $files ) );
+						?>
+						<button type="submit" name="all" value="1" class="button wpp-delete" onclick="return confirm('<?php echo esc_js( $confirm_all ); ?>');">
+							<span class="dashicons dashicons-trash" aria-hidden="true"></span><?php esc_html_e( 'Delete all', 'purge-ai1wm-backups' ); ?>
+						</button>
+					<?php endif; ?>
+				</div>
+
+				<?php if ( ! $files ) : ?>
+					<p class="wpp-empty"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><?php esc_html_e( 'No backups right now.', 'purge-ai1wm-backups' ); ?></p>
+				<?php else : ?>
+					<ul class="wpp-files">
+						<?php foreach ( $files as $file ) : ?>
+							<?php
+							$remain = $file['mtime'] + $ttl - $now;
+							/* translators: %s: file name */
+							$confirm = sprintf( __( 'Delete %s? This cannot be undone.', 'purge-ai1wm-backups' ), $file['name'] );
+							?>
+							<li class="wpp-file">
+								<span class="dashicons dashicons-media-archive" aria-hidden="true"></span>
+								<div class="wpp-file-main">
+									<span class="wpp-file-name" title="<?php echo esc_attr( $file['name'] ); ?>"><?php echo esc_html( $file['name'] ); ?></span>
+									<span class="wpp-file-meta">
+										<?php
+										echo esc_html( size_format( $file['size'], 1 ) );
+										echo ' · ';
+										/* translators: %s: date and time */
+										echo esc_html( sprintf( __( 'Last written %s', 'purge-ai1wm-backups' ), wp_date( 'Y-m-d H:i', $file['mtime'] ) ) );
+										?>
+									</span>
+								</div>
+								<span class="wpp-pill<?php echo $remain > 0 ? '' : ' is-due'; ?>">
+									<?php
+									echo esc_html(
+										$remain > 0
+											/* translators: %s: remaining time */
+											? sprintf( __( 'Auto-deletes in about %s', 'purge-ai1wm-backups' ), wpress_purge_format_duration( $remain ) )
+											: __( 'Auto-deletes at the next check', 'purge-ai1wm-backups' )
+									);
+									?>
+								</span>
+								<button type="submit" name="file" value="<?php echo esc_attr( $file['name'] ); ?>" class="button wpp-delete" onclick="return confirm('<?php echo esc_js( $confirm ); ?>');">
+									<span class="dashicons dashicons-trash" aria-hidden="true"></span><?php esc_html_e( 'Delete', 'purge-ai1wm-backups' ); ?>
+								</button>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+			</form>
+
+			<?php if ( wpress_purge_ai1wm_active() ) : ?>
+				<p class="wpp-foot"><a href="<?php echo esc_url( admin_url( 'admin.php?page=ai1wm_backups' ) ); ?>"><?php esc_html_e( 'Open the AI1WM backups screen', 'purge-ai1wm-backups' ); ?></a></p>
+			<?php endif; ?>
+		</div>
 	</div>
 	<?php
-}
-
-/**
- * 残っている .wpress と、消える目安の時刻を出す
- *
- * @param int $ttl 削除までの時間（秒）。
- */
-function wpress_purge_render_files( $ttl ) {
-	$dir   = wpress_purge_dir();
-	$files = is_dir( $dir ) ? glob( trailingslashit( $dir ) . '*.wpress' ) : array();
-	$files = is_array( $files ) ? array_filter( $files, 'is_file' ) : array();
-
-	if ( ! $files ) {
-		echo '<p>' . esc_html__( 'None.', 'purge-ai1wm-backups' ) . '</p>';
-		return;
-	}
-
-	$now = time();
-	echo '<table class="widefat striped" style="max-width:800px"><thead><tr>'
-		. '<th>' . esc_html__( 'File', 'purge-ai1wm-backups' ) . '</th>'
-		. '<th>' . esc_html__( 'Size', 'purge-ai1wm-backups' ) . '</th>'
-		. '<th>' . esc_html__( 'Last written', 'purge-ai1wm-backups' ) . '</th>'
-		. '<th>' . esc_html__( 'Deleted', 'purge-ai1wm-backups' ) . '</th>'
-		. '</tr></thead><tbody>';
-
-	foreach ( $files as $file ) {
-		$mtime  = (int) filemtime( $file );
-		$remain = $mtime + $ttl - $now;
-		printf(
-			'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
-			esc_html( basename( $file ) ),
-			esc_html( size_format( (int) filesize( $file ) ) ),
-			esc_html( wp_date( 'Y-m-d H:i', $mtime ) ),
-			esc_html(
-				$remain > 0
-					/* translators: %s: remaining time */
-					? sprintf( __( 'in about %s', 'purge-ai1wm-backups' ), wpress_purge_format_duration( $remain ) )
-					: __( 'at the next check', 'purge-ai1wm-backups' )
-			)
-		);
-	}
-	echo '</tbody></table>';
-
-	if ( wpress_purge_ai1wm_active() ) {
-		printf(
-			'<p><a href="%s">%s</a></p>',
-			esc_url( admin_url( 'admin.php?page=ai1wm_backups' ) ),
-			esc_html__( 'Open the AI1WM backups screen', 'purge-ai1wm-backups' )
-		);
-	}
 }
 
 /* ------------------------------------------------------------------

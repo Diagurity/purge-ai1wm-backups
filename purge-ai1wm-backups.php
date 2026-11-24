@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: All-in-One WP Migration Add-on: Auto-delete Backups
- * Description: An add-on for All-in-One WP Migration. Deletes the backups (.wpress) made by an export once the time you set has passed. Change the time under Settings → AIOWM Backup Auto-delete.
- * Version:     1.3.0
+ * Plugin Name: Purge AI1WM Backups
+ * Description: Automatically deletes All-in-One WP Migration backups (.wpress) once the time you set has passed. Set the time under Settings → Purge AI1WM Backups. Not an official ServMask extension.
+ * Version:     1.3.1
  * Author:      Diagurity
  * License:     GPL-2.0-or-later
  * Text Domain: purge-ai1wm-backups
@@ -13,7 +13,7 @@
  *       wp-content/mu-plugins/purge-ai1wm-backups.php
  *       mu-plugins は有効化の操作が不要で、テーマやプラグインの切り替えでも外れない。
  *       管理画面から無効化もできない。（プラグイン一覧の「設定」リンクは出ないので、
- *       設定画面へは「設定 → AIOWM バックアップ自動削除」から入る）
+ *       設定画面へは「設定 → AI1WM バックアップ自動削除」から入る）
  *   - 管理画面で管理したい場合:
  *       wp-content/plugins/purge-ai1wm-backups/ ごと置いて有効化。
  *
@@ -45,7 +45,7 @@ defined( 'ABSPATH' ) || exit;
 if ( defined( 'WPRESS_PURGE_LOADED' ) ) {
 	return;
 }
-define( 'WPRESS_PURGE_LOADED', '1.3.0' );
+define( 'WPRESS_PURGE_LOADED', '1.3.1' );
 
 /*
  * 画面の文言は英語で書き、日本語は languages/ の翻訳ファイルに置く。
@@ -270,7 +270,7 @@ add_action( 'admin_init', function () {
 } );
 
 /* ------------------------------------------------------------------
-   設定画面（設定 → AIOWM バックアップ自動削除）
+   設定画面（設定 → AI1WM バックアップ自動削除）
 ------------------------------------------------------------------ */
 
 add_action( 'admin_init', function () {
@@ -337,8 +337,8 @@ function wpress_purge_sanitize_ttl( $value ) {
 
 add_action( 'admin_menu', function () {
 	add_options_page(
-		__( 'All-in-One WP Migration Add-on: Auto-delete Backups', 'purge-ai1wm-backups' ),
-		__( 'AIOWM Backup Auto-delete', 'purge-ai1wm-backups' ),
+		'Purge AI1WM Backups',
+		_x( 'Purge AI1WM Backups', 'settings menu', 'purge-ai1wm-backups' ),
 		'manage_options',
 		WPRESS_PURGE_PAGE,
 		'wpress_purge_render_page'
@@ -377,18 +377,18 @@ function wpress_purge_render_page() {
 	}
 	?>
 	<div class="wrap">
-		<h1><?php esc_html_e( 'All-in-One WP Migration Add-on: Auto-delete Backups', 'purge-ai1wm-backups' ); ?></h1>
+		<h1><?php echo 'Purge AI1WM Backups'; ?></h1>
 
 		<div class="notice notice-info inline">
 			<p>
-				<strong><?php esc_html_e( 'This plugin is an add-on for All-in-One WP Migration (AIOWM).', 'purge-ai1wm-backups' ); ?></strong><br>
-				<?php esc_html_e( 'Backups (.wpress) made by an AIOWM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed.', 'purge-ai1wm-backups' ); ?>
+				<strong><?php esc_html_e( 'This plugin is an add-on for All-in-One WP Migration (AI1WM). It is not an official ServMask extension.', 'purge-ai1wm-backups' ); ?></strong><br>
+				<?php esc_html_e( 'Backups (.wpress) made by an AI1WM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed.', 'purge-ai1wm-backups' ); ?>
 			</p>
 		</div>
 
 		<?php if ( ! wpress_purge_ai1wm_active() ) : ?>
 			<div class="notice notice-warning inline">
-				<p><?php esc_html_e( 'All-in-One WP Migration is not active. This plugin is meant to delete AIOWM backups. Any .wpress files left on the server are still deleted without AIOWM.', 'purge-ai1wm-backups' ); ?></p>
+				<p><?php esc_html_e( 'All-in-One WP Migration is not active. This plugin is meant to delete AI1WM backups. Any .wpress files left on the server are still deleted without AI1WM.', 'purge-ai1wm-backups' ); ?></p>
 			</div>
 		<?php endif; ?>
 
@@ -493,7 +493,7 @@ function wpress_purge_render_files( $ttl ) {
 		printf(
 			'<p><a href="%s">%s</a></p>',
 			esc_url( admin_url( 'admin.php?page=ai1wm_backups' ) ),
-			esc_html__( 'Open the AIOWM backups screen', 'purge-ai1wm-backups' )
+			esc_html__( 'Open the AI1WM backups screen', 'purge-ai1wm-backups' )
 		);
 	}
 }

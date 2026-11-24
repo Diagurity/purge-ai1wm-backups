@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: purge-ai1wm-backups 1.3.0\n"
+"Project-Id-Version: purge-ai1wm-backups 1.3.1\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -8,16 +8,13 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Domain: purge-ai1wm-backups\n"
 
-#. Plugin Name
-msgid "All-in-One WP Migration Add-on: Auto-delete Backups"
-msgstr "All-in-One WP Migration 拡張：バックアップ自動削除"
-
 #. Description
-msgid "An add-on for All-in-One WP Migration. Deletes the backups (.wpress) made by an export once the time you set has passed. Change the time under Settings → AIOWM Backup Auto-delete."
-msgstr "All-in-One WP Migration の拡張です。エクスポートで作られたバックアップ（.wpress）を、指定した時間がたったら自動で削除します。削除までの時間は「設定 → AIOWM バックアップ自動削除」で変えられます。"
+msgid "Automatically deletes All-in-One WP Migration backups (.wpress) once the time you set has passed. Set the time under Settings → Purge AI1WM Backups. Not an official ServMask extension."
+msgstr "All-in-One WP Migration のバックアップ（.wpress）を、指定した時間がたったら自動で削除します。削除までの時間は「設定 → バックアップ自動削除」で変えられます。ServMask 社の公式の拡張機能ではありません。"
 
-msgid "AIOWM Backup Auto-delete"
-msgstr "AIOWM バックアップ自動削除"
+msgctxt "settings menu"
+msgid "Purge AI1WM Backups"
+msgstr "バックアップ自動削除"
 
 msgid "Settings"
 msgstr "設定"
@@ -45,14 +42,14 @@ msgstr "と"
 msgid "Set a time between %1$s and %2$s. The value was changed to fit that range and saved."
 msgstr "削除までの時間は %1$s〜%2$s の間で指定してください。範囲に収まる値に直して保存しました。"
 
-msgid "This plugin is an add-on for All-in-One WP Migration (AIOWM)."
-msgstr "このプラグインは All-in-One WP Migration（AIOWM）の拡張です。"
+msgid "This plugin is an add-on for All-in-One WP Migration (AI1WM). It is not an official ServMask extension."
+msgstr "このプラグインは All-in-One WP Migration（AI1WM）の拡張です。ServMask 社の公式の拡張機能ではありません。"
 
-msgid "Backups (.wpress) made by an AIOWM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed."
-msgstr "AIOWM のエクスポートで作られたバックアップ（.wpress）は、サイトの公開フォルダに置かれたままになり、URL が分かれば誰でもダウンロードできます。中身はサイト全体（データベースと wp-config.php を含む）なので、指定した時間がたったら自動で削除します。"
+msgid "Backups (.wpress) made by an AI1WM export stay in a public folder of the site, and anyone who knows the URL can download them. They contain the whole site, including the database and wp-config.php, so this plugin deletes them automatically once the time you set has passed."
+msgstr "AI1WM のエクスポートで作られたバックアップ（.wpress）は、サイトの公開フォルダに置かれたままになり、URL が分かれば誰でもダウンロードできます。中身はサイト全体（データベースと wp-config.php を含む）なので、指定した時間がたったら自動で削除します。"
 
-msgid "All-in-One WP Migration is not active. This plugin is meant to delete AIOWM backups. Any .wpress files left on the server are still deleted without AIOWM."
-msgstr "All-in-One WP Migration が有効になっていません。このプラグインは AIOWM のバックアップを消すためのものです。残っている .wpress がある場合は、AIOWM が無くても削除は動きます。"
+msgid "All-in-One WP Migration is not active. This plugin is meant to delete AI1WM backups. Any .wpress files left on the server are still deleted without AI1WM."
+msgstr "All-in-One WP Migration が有効になっていません。このプラグインは AI1WM のバックアップを消すためのものです。残っている .wpress がある場合は、AI1WM が無くても削除は動きます。"
 
 msgid "Time until deletion"
 msgstr "削除までの時間"
@@ -105,8 +102,8 @@ msgstr "あと約%s"
 msgid "at the next check"
 msgstr "次の確認で削除"
 
-msgid "Open the AIOWM backups screen"
-msgstr "AIOWM のバックアップ画面を開く"
+msgid "Open the AI1WM backups screen"
+msgstr "AI1WM のバックアップ画面を開く"
 
 msgid "Could not auto-delete All-in-One WP Migration backups (.wpress)."
 msgstr "All-in-One WP Migration のバックアップ（.wpress）の自動削除に失敗しました。"

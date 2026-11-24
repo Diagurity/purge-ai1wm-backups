@@ -1,6 +1,6 @@
-# purge-ai1wm-backups — .wpress 自動削除
+# purge-ai1wm-backups — All-in-One WP Migration 拡張：バックアップ自動削除
 
-All-in-One WP Migration（AI1WM）が作る `.wpress` を、最後の書き込みから一定時間後に削除する。
+All-in-One WP Migration（AI1WM）の拡張。AI1WM が作る `.wpress` を、最後の書き込みから指定した時間がたったら削除する。
 
 ## なぜ必要か
 
@@ -20,13 +20,18 @@ All-in-One WP Migration（AI1WM）が作る `.wpress` を、最後の書き込�
 
 ## 設定
 
-削除までの猶予（既定 1 時間）は `wp-config.php` で変更できる。
+管理画面の **設定 → AIOWM バックアップ自動削除** で、削除までの時間を分・時間・日で指定する（10分〜30日、既定1時間）。
+プラグイン一覧の「設定」リンクからも開ける（mu-plugins に置いたときは一覧にリンクが出ないので、設定メニューから）。
+画面には、いま残っている `.wpress` と、消える目安の時刻も出る。
+
+`wp-config.php` で決めた値は管理画面より優先され、画面では変えられなくなる。
 
 ```php
-define( 'WPRESS_PURGE_TTL', 7200 ); // 2 時間
+define( 'WPRESS_PURGE_TTL', 7200 ); // 2 時間（秒）
 ```
 
 削除先は `AI1WM_BACKUPS_PATH`（未定義なら `wp-content/ai1wm-backups`）。
+プラグインを削除すると、設定（`wpress_purge_ttl`）と記録も消える。
 
 ## 動作
 
